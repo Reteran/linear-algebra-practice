@@ -1,11 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np 
 import tkinter as tk
+import csv
+import subprocess
+import random
 from tkinter import ttk
 import tkinter.font as tkFont
 
 root = tk.Tk()
-root.title('Gauss-Seidel Solver')
+root.title('Convergence Visualizer')
 root.geometry('900x500')
 mainframe = ttk.Frame(root, padding=(20,20,20,20))
 mainframe.grid(column=0, row=0, sticky='nwes')
@@ -17,7 +20,7 @@ unknowns = tk.StringVar()
 coeff_matrix = []
 aug_matrix = []
 
-custom_font = tkFont.Font(family='Courier', size=20)
+custom_font = tkFont.Font(family='Courier', size=10)
 
 ttk.Label(mainframe, text='Number of equations:', font=custom_font).grid(column=1,row=1,sticky='e')
 ttk.Entry(mainframe, textvariable = equations, width=4, font=custom_font).grid(column=2,row=1, sticky='w')
@@ -45,14 +48,23 @@ def make_term_frame(parent, c, r, label_text):
     # return for storage of elements of matrix
     return var
     
+system_frame = None
 def print_system():
     eqns = int(equations.get())
     unns = int(unknowns.get())
     
+    
+    
     # parent frame for frames of terms in system
+    global system_frame
+    
+    if system_frame != None:
+        system_frame.destroy()
+    
     system_frame = ttk.Frame(mainframe, padding = (10,10,10,10))
     system_frame.grid(column=1, row=5, sticky='w')
-
+    
+    
     for i in range(eqns):
         current_row = []
         for j in range(unns):
@@ -75,6 +87,22 @@ def print_system():
         
         # appending the full row to augmented matrix [A|b]
         aug_matrix.append(list(current_row))
+
+def randomize():
+    eqns = int(equations.get())
+    unns = int(unknowns.get())
+    
+    for i in range(len(aug_matrix)):
+        for j in range(len(aug_matrix[i])):
+            if(i != j):
+                aug_matrix[i][j].set(str(random.randint(-100,100)))
+    
+    for i in range(len(aug_matrix)):
+        sum = 0
+        for j in range(len(aug_matrix[i])):
+            if(j != i):
+                sum = sum + abs(int(aug_matrix[i][j].get()))
+        aug_matrix[i][i].set(str(sum + random.randint(1,10)))
 
 def to_csv():
     # output coeff_matrix to csv file
@@ -110,24 +138,54 @@ def print_debug():
         for j in range(len(aug_matrix[i])):
             print(aug_matrix[i][j].get(), end='\t')
         print()
+        
+
+
+def visualize():
+    plt.close()
+    subprocess.run(["/mnt/c/users/rajdeep deka/documents/code/jngs visualizer/iterator"])
+    x_vals = []
+    with open('Data/solution.csv', 'r') as file:
+        solreader = csv.reader(file, delimiter=',')
+        for r in solreader:
+            x_vals.append([float(v) for v in r])
+        for r in x_vals:
+            print(r)
+        print()
             
-printer = tk.Button(mainframe, text='Print System', command = print_system, font='Courier 20 bold')
+    x_vals=np.array(x_vals)
+    iterations = np.arange(len(x_vals))
+    
+    for j in range(x_vals.shape[1]):
+        plt.plot(iterations, x_vals[:, j], label=f'x{j+1}')
+    
+    plt.xlabel('Iteration')
+    plt.ylabel('value')
+    plt.legend()
+    plt.title('convergence')
+    plt.show()
+    
+printer = tk.Button(mainframe, text='Print System', command = print_system, font=custom_font)
 printer.configure(background='light gray')
 printer.grid(column=1,row=3,sticky='e')
 
-debug = tk.Button(mainframe, text='debug', command = print_debug, font='Courier 20 bold')
+""" for debugging purposes
+|debug = tk.Button(mainframe, text='debug', command = print_debug, font='Courier 20 bold')
 debug.configure(background='light gray')
-debug.grid(column=2,row=3,sticky='e')
+debug.grid(column=2,row=3,sticky='e')"""
 
-output = tk.Button(mainframe, text='output to csv', command = to_csv, font='Courier 20 bold')
+iteratebutton = tk.Button(mainframe, text='iterate', command = visualize,  font=custom_font)
+iteratebutton.configure(background='light gray');
+iteratebutton.grid(column=3, row=3, sticky='w')
+
+output = tk.Button(mainframe, text='output to csv', command = to_csv, font=custom_font)
 output.configure(background='light gray')
-output.grid(column=3,row=3,sticky='e')
+output.grid(column=2,row=3,sticky='e')
 
-xpoints = np.array([1,8, 6])
-ypoints = np.array([3,-4, 4])
+grand = tk.Button(mainframe, text='randomize', command = randomize,  font=custom_font)
+grand.configure(background='light gray');
+grand.grid(column=3, row=2, sticky='w')
 
-#plt.plot(xpoints, ypoints)
-#plt.show()
 
 root.mainloop()
 
